@@ -1,5 +1,5 @@
 import pytest
-from tfl_piccadilly_alert import (
+from main import (
     parse_cache_control,
     disruption_hash,
     extract_all_disruptions,
