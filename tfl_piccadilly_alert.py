@@ -47,6 +47,12 @@ def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     # Convert headers to a regular dict of str to str
     return resp.json(), dict(resp.headers)
 
+def dumps_json_to_file(data: List[Dict[str, Any]], filename: str):
+    """Dumps the JSON data to a file."""
+    with open(filename, "w") as f:
+        import json
+        json.dump(data, f, indent=2)
+
 
 def extract_all_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Extract all unique disruptions from all lines in the status response."""
