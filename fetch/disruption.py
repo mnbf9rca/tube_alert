@@ -42,12 +42,12 @@ def get_disruptions_with_timeout(
     return all_disruptions, cache_timeout
 
 
-def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], requests.structures.CaseInsensitiveDict]:
+def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     """Fetches the status of all lines for the specified mode from TFL API."""
     resp = requests.get(TFL_LINE_MODE_STATUS_URL, timeout=10)
     resp.raise_for_status()
-    # Return headers as CaseInsensitiveDict to preserve case-insensitive mapping
-    return resp.json(), resp.headers
+    # Return headers as a regular dict - we dont need the case-insensitive dict
+    return resp.json(), dict(resp.headers)
 
 
 def extract_all_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
