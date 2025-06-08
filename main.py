@@ -129,6 +129,8 @@ def process_changed_disruptions(last_disruption_hashes: dict, all_disruptions: l
     if changed_disruptions:
         logger.info(f"Detected {len(changed_disruptions)} changed disruptions.")
         notify_users(changed_disruptions)
+    else:
+        logger.info("No changes in disruptions detected.")
 
 
 def get_disruptions_with_timeout(last_disruption_hashes: dict) -> Tuple[List[Dict[str, Any]], int]:
