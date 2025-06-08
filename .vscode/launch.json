@@ -13,10 +13,10 @@
       "console": "integratedTerminal"
     },
         {
-      "name": "Python Debugger: tfl_piccadilly_alert.py",
+      "name": "Python Debugger: main.py",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/tfl_piccadilly_alert.py",
+      "program": "${workspaceFolder}/main.py",
       "console": "integratedTerminal"
     }
   ]
