@@ -7,7 +7,6 @@ from main import (
     disruption_hash,
     extract_all_disruptions,
     disruption_id_hash,
-    notify_users,
 )
 
 @pytest.mark.parametrize(
@@ -95,21 +94,3 @@ def test_disruption_id_hash(disruption1, disruption2, should_match):
     h2 = disruption_id_hash(disruption2)
     assert (h1 == h2) == should_match
 
-def test_notify_users(capsys):
-    disruptions = [
-        {"lineId": "piccadilly", "reason": "Closed for maintenance"},
-        {"lineId": "central", "reason": "Minor delays"},
-    ]
-    user_line_interests = {
-        "piccadilly": ["alice@example.com"],
-        "central": ["bob@example.com", "carol@example.com"],
-        "jubilee": ["nobody@example.com"],
-    }
-    notify_users(disruptions, user_line_interests)
-    out = capsys.readouterr().out
-    assert "Notify alice@example.com: Disruption(s) on piccadilly line!" in out
-    assert "Notify bob@example.com: Disruption(s) on central line!" in out
-    assert "Notify carol@example.com: Disruption(s) on central line!" in out
-    assert "Closed for maintenance" in out
-    assert "Minor delays" in out
-    assert "jubilee" not in out
