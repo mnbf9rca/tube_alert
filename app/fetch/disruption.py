@@ -11,6 +11,7 @@ TFL_LINE_MODE_STATUS_URL = (
     f"https://api.tfl.gov.uk/Line/Mode/{MODES}/Status?detail=true"
 )
 
+TFL_STATUS_SEVERITY_OK = 10  # Status severity for "OK" on all lines on all modes - see https://api-portal.tfl.gov.uk/api-details#api=Line&operation=Line_MetaSeverity
 
 def fetch_disruptions_with_timeout(
     last_disruption_hashes: dict,
@@ -56,7 +57,7 @@ def extract_all_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str,
     seen = set()
     for line in status_json:
         for status in line.get("lineStatuses", []):
-            if status.get("statusSeverity", "") != 10:
+            if status.get("statusSeverity", "") != TFL_STATUS_SEVERITY_OK:
                 reason = status.get("reason", "")
                 line_id = status.get("lineId", line.get("id", ""))
                 unique_key = (line_id, reason)
