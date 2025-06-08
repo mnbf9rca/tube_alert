@@ -4,7 +4,6 @@ import requests
 from .common import parse_cache_control, hash_dictionary
 from typing import List, Dict, Any, Tuple
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MODES = "tube"  # Comma-separated modes, e.g., "tube,overground"
@@ -43,12 +42,12 @@ def get_disruptions_with_timeout(
     return all_disruptions, cache_timeout
 
 
-def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
+def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], requests.structures.CaseInsensitiveDict]:
     """Fetches the status of all lines for the specified mode from TFL API."""
     resp = requests.get(TFL_LINE_MODE_STATUS_URL, timeout=10)
     resp.raise_for_status()
-    # Convert headers to a regular dict of str to str
-    return resp.json(), dict(resp.headers)
+    # Return headers as CaseInsensitiveDict to preserve case-insensitive mapping
+    return resp.json(), resp.headers
 
 
 def extract_all_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

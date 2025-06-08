@@ -5,7 +5,6 @@ import json
 from hashlib import sha256
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def parse_cache_control(headers: Dict[str, str]) -> int:

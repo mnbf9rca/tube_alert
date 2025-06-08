@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- Notification filter: users interested in specific lines ---
