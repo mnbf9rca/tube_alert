@@ -1,9 +1,14 @@
 import requests
 import contextlib
+import json
 import time
 import hashlib
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 MODES = "tube"  # Comma-separated modes, e.g., "tube,overground"
 TFL_LINE_MODE_STATUS_URL = (
@@ -16,18 +21,18 @@ def parse_cache_control(headers: Dict[str, str]) -> int:
     """Extracts max-age from Cache-Control header, returns seconds (default 60 if not found)."""
     cache_control = headers.get("Cache-Control", "")
     for part in cache_control.split(","):
+        part = part.strip()
         if "max-age" in part:
             with contextlib.suppress(Exception):
                 return int(part.split("=")[1].strip())
     # Default to 60 seconds if not found
+    logger.debug("No max-age found in Cache-Control, defaulting to 60 seconds.")
     return 60
-
-
 
 
 def disruption_hash(disruptions: List[Dict[str, Any]]) -> str:
     """Returns a hash representing the current disruption state for change detection."""
-    return hashlib.sha256(str(disruptions).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(disruptions, sort_keys=True).encode()).hexdigest()
 
 
 # --- Notification filter: users interested in specific lines ---
@@ -42,15 +47,18 @@ USER_LINE_INTERESTS = {
 
 # --- Side-effectful functions ---
 def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
-    resp = requests.get(TFL_LINE_MODE_STATUS_URL)
+    """Fetches the status of all lines for the specified mode from TFL API."""
+    resp = requests.get(TFL_LINE_MODE_STATUS_URL, timeout=10)
     resp.raise_for_status()
     # Convert headers to a regular dict of str to str
     return resp.json(), dict(resp.headers)
+
 
 def dumps_json_to_file(data: List[Dict[str, Any]], filename: str):
     """Dumps the JSON data to a file."""
     with open(filename, "w") as f:
         import json
+
         json.dump(data, f, indent=2)
 
 
@@ -85,40 +93,65 @@ def notify_users(
     # Group disruptions by line
     disruptions_by_line = defaultdict(list)
     for d in disruptions:
-        disruptions_by_line[d.get("lineId", "")].append(d)
+        line_id = d.get("lineId", "").lower()
+        disruptions_by_line[line_id].append(d)
+    logger.info(f"lines with disruptions: {list(disruptions_by_line.keys())}")
     # Notify users interested in each line
     for line_id, users in user_line_interests.items():
-        if line_id in disruptions_by_line:
+        normalized_line_id = line_id.lower()
+        if normalized_line_id in disruptions_by_line:
+            logger.info(f"Notifying users for line: {normalized_line_id}")
             for user in users:
                 print(f"Notify {user}: Disruption(s) on {line_id} line!")
-                for d in disruptions_by_line[line_id]:
+                for d in disruptions_by_line[normalized_line_id]:
                     print(f"  Reason: {d.get('reason', 'No reason provided')}")
 
 
 def sleep_between_cycles(seconds: int):
-    print(f"Sleeping for {seconds} seconds before next check.")
+    logger.info(f"Sleeping for {seconds} seconds before next check.")
     time.sleep(seconds)
+
+
+def run_cycle_return_timeout(last_disruption_hashes: dict) -> int:
+    all_disruptions, cache_timeout = get_disruptions_with_timeout(last_disruption_hashes)
+    process_changed_disruptions(last_disruption_hashes, all_disruptions)
+    return cache_timeout
+
+def process_changed_disruptions(last_disruption_hashes: dict, all_disruptions: list) -> None:
+    """Compares current disruptions with last known state and notifies users of changes."""
+    changed_disruptions = []
+    for disruption in all_disruptions:
+        d_id = disruption_id_hash(disruption)
+        d_hash = disruption_hash([disruption])
+        if last_disruption_hashes.get(d_id) != d_hash:
+            changed_disruptions.append(disruption)
+            last_disruption_hashes[d_id] = d_hash
+    if changed_disruptions:
+        logger.info(f"Detected {len(changed_disruptions)} changed disruptions.")
+        notify_users(changed_disruptions)
+
+
+def get_disruptions_with_timeout(last_disruption_hashes: dict) -> Tuple[List[Dict[str, Any]], int]:
+    """Fetches disruptions and returns them along with cache timeout."""
+    status_json, headers = fetch_status_by_mode()
+    all_disruptions = extract_all_disruptions(status_json)
+    logger.info(f"Fetched {len(all_disruptions)} disruptions.")
+
+    # Purge entries for disruptions no longer present to prevent unbounded state growth
+    current_ids = {disruption_id_hash(d) for d in all_disruptions}
+    to_remove = [k for k in last_disruption_hashes if k not in current_ids]
+    for k in to_remove:
+        del last_disruption_hashes[k]
+    logger.info(f"Removed {len(to_remove)} old disruptions from tracking.")
+    cache_timeout = parse_cache_control(headers)
+    return all_disruptions, cache_timeout
 
 
 # --- Main loop ---
 def main_loop():
     last_disruption_hashes = {}  # disruption_id_hash -> hash(disruption)
     while True:
-        status_json, headers = fetch_status_by_mode()
-        all_disruptions = extract_all_disruptions(status_json)
-        cache_timeout = parse_cache_control(headers)
-        changed_disruptions = []
-        for disruption in all_disruptions:
-            d_id = disruption_id_hash(disruption)
-            d_hash = disruption_hash([disruption])
-            if last_disruption_hashes.get(d_id) != d_hash:
-                changed_disruptions.append(disruption)
-                last_disruption_hashes[d_id] = d_hash
-        if not changed_disruptions:
-            print("No new disruptions.")
-            sleep_between_cycles(cache_timeout)
-            continue
-        notify_users(changed_disruptions)
+        cache_timeout = run_cycle_return_timeout(last_disruption_hashes)
         sleep_between_cycles(cache_timeout)
 
 
