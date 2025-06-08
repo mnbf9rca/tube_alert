@@ -9,7 +9,6 @@ MODES = "tube"  # Comma-separated modes, e.g., "tube,overground"
 TFL_LINE_MODE_STATUS_URL = (
     f"https://api.tfl.gov.uk/Line/Mode/{MODES}/Status?detail=true"
 )
-LINE_IDS = ["jubilee", "waterlooandcity", "piccadilly"]
 
 
 # --- Pure functions ---
@@ -24,16 +23,6 @@ def parse_cache_control(headers: Dict[str, str]) -> int:
     return 60
 
 
-def parse_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Extracts disruptions from the TFL line status response."""
-    disruptions = []
-    for line in status_json:
-        disruptions.extend(
-            status
-            for status in line.get("lineStatuses", [])
-            if status.get("statusSeverityDescription", "") != "Good Service"
-        )
-    return disruptions
 
 
 def disruption_hash(disruptions: List[Dict[str, Any]]) -> str:
@@ -120,7 +109,7 @@ def main_loop():
                 changed_disruptions.append(disruption)
                 last_disruption_hashes[d_id] = d_hash
         if not changed_disruptions:
-            print("No new disruptions. Waiting for", cache_timeout, "seconds.")
+            print("No new disruptions.")
             sleep_between_cycles(cache_timeout)
             continue
         notify_users(changed_disruptions)
