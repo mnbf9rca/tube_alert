@@ -28,14 +28,17 @@ def test_parse_cache_control(headers, expected):
 def test_disruption_hash_changes():
     d1 = [{"lineId": "central", "reason": "Minor delays"}]
     d2 = [{"lineId": "central", "reason": "Good Service"}]
+    d3 = [{"reason": "Minor delays", "lineId": "central"}]
     # Different disruptions should have different hashes
     assert disruption_hash(d1) != disruption_hash(d2)
     # Identical disruptions (even as new dicts) should have the same hash
     assert disruption_hash(d1) == disruption_hash([{**d1[0]}])
+    # Hash should be consistent regardless of order
+    assert disruption_hash(d1) == disruption_hash(d3)
 
 def test_disruption_hash_empty_list():
     # disruption_hash should handle empty list
-    assert isinstance(disruption_hash([]), int)
+    assert isinstance(disruption_hash([]), str)
     # Hash of empty list should be consistent
     assert disruption_hash([]) == disruption_hash([])
 
