@@ -1,9 +1,9 @@
 import time
 import logging
 from typing import Any, Dict, List, Callable
-from fetch.disruption import fetch_disruptions_with_timeout
+from app.fetch.disruption import fetch_disruptions_with_timeout
 
-from notify import notifier  # Importing the notifier module
+from app.notify import notifier  # Importing the notifier module
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

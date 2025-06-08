@@ -1,8 +1,8 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
-from notify.notifier import notify_users
+from app.notify.notifier import notify_users
 
 def test_notify_users(capsys):
     disruptions = [

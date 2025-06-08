@@ -1,8 +1,8 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
-from fetch.common import (
+from app.fetch.common import (
     parse_cache_control,
     hash_dictionary
 )

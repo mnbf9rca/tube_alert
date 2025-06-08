@@ -13,7 +13,7 @@ def test_notify_on_disruption_change():
     ]
     
     # Mock the notifier to capture output
-    mock_notify = patch('notify.notifier.notify_users').start()
+    mock_notify = patch('app.notify.notifier.notify_users').start()
     mock_notify.return_value = None  # Mock the return value
     # Call the function with mocked notifier
     notify_on_disruption_change(disruptions, mock_notify)

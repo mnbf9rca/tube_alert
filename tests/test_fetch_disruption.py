@@ -1,8 +1,8 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
-from fetch.disruption import (
+from app.fetch.disruption import (
     extract_all_disruptions,
     disruption_id_hash,
     identify_changed_disruption_items
@@ -79,7 +79,7 @@ def fake_hash_dictionary(disruptions):
 )
 def test_identify_changed_disruption_items(monkeypatch, last_hashes, all_disruptions, expected):
     # Patch hash_dictionary to our fake for deterministic results
-    monkeypatch.setattr("fetch.disruption.hash_dictionary", fake_hash_dictionary)
+    monkeypatch.setattr("app.fetch.disruption.hash_dictionary", fake_hash_dictionary)
     # Copy last_hashes to avoid mutation between tests
     last_hashes = dict(last_hashes)
     result = identify_changed_disruption_items(last_hashes, all_disruptions)
@@ -89,7 +89,7 @@ def test_identify_changed_disruption_items(monkeypatch, last_hashes, all_disrupt
     assert sorted(map(key, result)) == sorted(map(key, expected))
 
 def test_identify_changed_disruption_items_updates_last_hashes(monkeypatch):
-    monkeypatch.setattr("fetch.disruption.hash_dictionary", fake_hash_dictionary)
+    monkeypatch.setattr("app.fetch.disruption.hash_dictionary", fake_hash_dictionary)
     d = make_disruption("central", "Signal failure")
     last_hashes = {}
     identify_changed_disruption_items(last_hashes, [d])
