@@ -7,7 +7,7 @@ flowchart TD
     B-->C{any disruption?}
     C-- No -->D[wait for cache timeout]
     D-->A
-    C-- Yes -->E{Disuption to any line?}
+    C-- Yes -->E{Disruption to any line?}
     E-- No --> D
     E-- Yes -->F{has disruption changed}
     F-- No -->D
