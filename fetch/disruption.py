@@ -19,7 +19,7 @@ def fetch_disruptions_with_timeout(
     all_disruptions, cache_timeout = get_disruptions_with_timeout(
         last_disruption_hashes
     )
-    changed_disruption = process_changed_disruptions(
+    changed_disruption = identify_changed_disruption_items(
         last_disruption_hashes, all_disruptions
     )
     return cache_timeout, changed_disruption
@@ -76,7 +76,7 @@ def disruption_id_hash(disruption: Dict[str, Any]) -> str:
     return sha256(key.encode()).hexdigest()
 
 
-def process_changed_disruptions(
+def identify_changed_disruption_items(
     last_disruption_hashes: dict, all_disruptions: list
 ) -> List[Dict[str, Any]]:
     """Compares current disruptions with last known state and returns changed disruptions."""
