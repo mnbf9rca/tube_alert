@@ -20,6 +20,7 @@ from main import (
         ({"Cache-Control": "max-age=notanint"}, 60),
         ({"Cache-Control": "public, max-age=45, foo=bar"}, 45),
         ({"Cache-Control": "public, s-maxage=60"}, 60),
+        ({"Cache-Control": "max-age=0"}, 0),
     ],
 )
 def test_parse_cache_control(headers, expected):
