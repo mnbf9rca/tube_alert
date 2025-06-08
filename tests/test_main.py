@@ -28,8 +28,34 @@ def test_parse_cache_control(headers, expected):
 def test_disruption_hash_changes():
     d1 = [{"lineId": "central", "reason": "Minor delays"}]
     d2 = [{"lineId": "central", "reason": "Good Service"}]
+    # Different disruptions should have different hashes
     assert disruption_hash(d1) != disruption_hash(d2)
+    # Identical disruptions (even as new dicts) should have the same hash
     assert disruption_hash(d1) == disruption_hash([{**d1[0]}])
+
+def test_disruption_hash_empty_list():
+    # disruption_hash should handle empty list
+    assert isinstance(disruption_hash([]), int)
+    # Hash of empty list should be consistent
+    assert disruption_hash([]) == disruption_hash([])
+
+def test_disruption_hash_multiple_disruptions():
+    d1 = [
+        {"lineId": "central", "reason": "Minor delays"},
+        {"lineId": "district", "reason": "Major delays"},
+    ]
+    d2 = [
+        {"lineId": "central", "reason": "Minor delays"},
+        {"lineId": "district", "reason": "Major delays"},
+    ]
+    d3 = [
+        {"lineId": "central", "reason": "Minor delays"},
+        {"lineId": "district", "reason": "Good Service"},
+    ]
+    # Hash should be the same for identical lists
+    assert disruption_hash(d1) == disruption_hash(d2)
+    # Hash should differ if any disruption changes
+    assert disruption_hash(d1) != disruption_hash(d3)
 
 def test_extract_all_disruptions():
     status_json = [
