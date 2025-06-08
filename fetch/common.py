@@ -1,6 +1,8 @@
 import contextlib
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List
+import json
+from hashlib import sha256
 
 
 logging.basicConfig(level=logging.INFO)
@@ -17,3 +19,7 @@ def parse_cache_control(headers: Dict[str, str]) -> int:
     # Default to 60 seconds if not found
     logger.debug("No max-age found in Cache-Control, defaulting to 60 seconds.")
     return 60
+
+def hash_dictionary(dict_to_hash: List[Dict[str, Any]]) -> str:
+    """Returns a hash representing the current disruption state for change detection."""
+    return sha256(json.dumps(dict_to_hash, sort_keys=True).encode()).hexdigest()

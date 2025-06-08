@@ -1,8 +1,7 @@
-import json
 from hashlib import sha256
 import logging
 import requests
-from .common import parse_cache_control
+from .common import parse_cache_control, hash_dictionary
 from typing import List, Dict, Any, Tuple
 
 logging.basicConfig(level=logging.INFO)
@@ -13,17 +12,22 @@ TFL_LINE_MODE_STATUS_URL = (
     f"https://api.tfl.gov.uk/Line/Mode/{MODES}/Status?detail=true"
 )
 
-def disruption_hash(disruptions: List[Dict[str, Any]]) -> str:
-    """Returns a hash representing the current disruption state for change detection."""
-    return sha256(json.dumps(disruptions, sort_keys=True).encode()).hexdigest()
 
-
-def fetch_disruptions_with_timeout(last_disruption_hashes: dict) -> Tuple[int, List[Dict[str, Any]]]:
-    all_disruptions, cache_timeout = get_disruptions_with_timeout(last_disruption_hashes)
-    changed_disruption = process_changed_disruptions(last_disruption_hashes, all_disruptions)
+def fetch_disruptions_with_timeout(
+    last_disruption_hashes: dict,
+) -> Tuple[int, List[Dict[str, Any]]]:
+    all_disruptions, cache_timeout = get_disruptions_with_timeout(
+        last_disruption_hashes
+    )
+    changed_disruption = process_changed_disruptions(
+        last_disruption_hashes, all_disruptions
+    )
     return cache_timeout, changed_disruption
 
-def get_disruptions_with_timeout(last_disruption_hashes: dict) -> Tuple[List[Dict[str, Any]], int]:
+
+def get_disruptions_with_timeout(
+    last_disruption_hashes: dict,
+) -> Tuple[List[Dict[str, Any]], int]:
     """Fetches disruptions and returns them along with cache timeout."""
     status_json, headers = fetch_status_by_mode()
     all_disruptions = extract_all_disruptions(status_json)
@@ -38,12 +42,14 @@ def get_disruptions_with_timeout(last_disruption_hashes: dict) -> Tuple[List[Dic
     cache_timeout = parse_cache_control(headers)
     return all_disruptions, cache_timeout
 
+
 def fetch_status_by_mode() -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     """Fetches the status of all lines for the specified mode from TFL API."""
     resp = requests.get(TFL_LINE_MODE_STATUS_URL, timeout=10)
     resp.raise_for_status()
     # Convert headers to a regular dict of str to str
     return resp.json(), dict(resp.headers)
+
 
 def extract_all_disruptions(status_json: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Extract all unique disruptions from all lines in the status response."""
@@ -69,12 +75,15 @@ def disruption_id_hash(disruption: Dict[str, Any]) -> str:
     key = f"{disruption.get('lineId', '')}|{disruption.get('reason', '')}"
     return sha256(key.encode()).hexdigest()
 
-def process_changed_disruptions(last_disruption_hashes: dict, all_disruptions: list) -> List[Dict[str, Any]]:
+
+def process_changed_disruptions(
+    last_disruption_hashes: dict, all_disruptions: list
+) -> List[Dict[str, Any]]:
     """Compares current disruptions with last known state and returns changed disruptions."""
     changed_disruptions = []
     for disruption in all_disruptions:
         d_id = disruption_id_hash(disruption)
-        d_hash = disruption_hash([disruption])
+        d_hash = hash_dictionary([disruption])
         if last_disruption_hashes.get(d_id) != d_hash:
             changed_disruptions.append(disruption)
             last_disruption_hashes[d_id] = d_hash
